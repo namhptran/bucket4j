@@ -38,6 +38,7 @@ import io.lettuce.core.cluster.RedisClusterClient;
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
 import io.lettuce.core.cluster.api.async.RedisAdvancedClusterAsyncCommands;
 import io.lettuce.core.codec.ByteArrayCodec;
+import io.lettuce.core.codec.RedisCodec;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -45,88 +46,97 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-public class LettuceBasedProxyManager extends AbstractCompareAndSwapBasedProxyManager<byte[]> {
+public class LettuceBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxyManager<K> {
 
-    private final RedisApi redisApi;
+    private final RedisApi<K> redisApi;
     private final ExpirationAfterWriteStrategy expirationStrategy;
 
-    public static LettuceBasedProxyManagerBuilder builderFor(RedisAsyncCommands<byte[], byte[]> redisAsyncCommands) {
+    public static <K> LettuceBasedProxyManagerBuilder<K> builderFor(RedisAsyncCommands<K, byte[]> redisAsyncCommands) {
         Objects.requireNonNull(redisAsyncCommands);
-        RedisApi redisApi = new RedisApi() {
+        RedisApi<K> redisApi = new RedisApi<>() {
             @Override
-            public <V> RedisFuture<V> eval(String script, ScriptOutputType scriptOutputType, byte[][] keys, byte[][] params) {
+            public <V> RedisFuture<V> eval(String script, ScriptOutputType scriptOutputType, K[] keys, byte[][] params) {
                 return redisAsyncCommands.eval(script, scriptOutputType, keys, params);
             }
             @Override
-            public RedisFuture<byte[]> get(byte[] key) {
+            public RedisFuture<byte[]> get(K key) {
                 return redisAsyncCommands.get(key);
             }
             @Override
-            public RedisFuture<Void> delete(byte[] key) {
+            public RedisFuture<Void> delete(K key) {
                 return (RedisFuture) redisAsyncCommands.del(key);
             }
         };
-        return new LettuceBasedProxyManagerBuilder(redisApi);
+        return new LettuceBasedProxyManagerBuilder<>(redisApi);
     }
 
-    public static LettuceBasedProxyManagerBuilder builderFor(StatefulRedisConnection<byte[], byte[]> statefulRedisConnection) {
+    public static <K> LettuceBasedProxyManagerBuilder<K> builderFor(StatefulRedisConnection<K, byte[]> statefulRedisConnection) {
         return builderFor(statefulRedisConnection.async());
     }
 
-    public static LettuceBasedProxyManagerBuilder builderFor(RedisClient redisClient) {
+    public static <K> LettuceBasedProxyManagerBuilder<K> builderFor(RedisClient redisClient, RedisCodec<K, ?> keyCodec) {
+        return builderFor(redisClient.connect(RedisCodec.of(keyCodec, ByteArrayCodec.INSTANCE)));
+    }
+
+    public static LettuceBasedProxyManagerBuilder<byte[]> builderFor(RedisClient redisClient) {
         return builderFor(redisClient.connect(ByteArrayCodec.INSTANCE));
     }
 
-    public static LettuceBasedProxyManagerBuilder builderFor(RedisClusterClient redisClient) {
+    public static <K> LettuceBasedProxyManagerBuilder<K> builderFor(RedisClusterClient redisClient, RedisCodec<K, ?> keyCodec) {
+        return builderFor(redisClient.connect(RedisCodec.of(keyCodec, ByteArrayCodec.INSTANCE)));
+    }
+
+    public static LettuceBasedProxyManagerBuilder<byte[]> builderFor(RedisClusterClient redisClient) {
         return builderFor(redisClient.connect(ByteArrayCodec.INSTANCE));
     }
 
-    public static LettuceBasedProxyManagerBuilder builderFor(StatefulRedisClusterConnection<byte[], byte[]> connection) {
+    public static <K> LettuceBasedProxyManagerBuilder<K> builderFor(StatefulRedisClusterConnection<K, byte[]> connection) {
         return builderFor(connection.async());
     }
 
-    public static LettuceBasedProxyManagerBuilder builderFor(RedisAdvancedClusterAsyncCommands<byte[], byte[]> redisAsyncCommands) {
+    public static <K> LettuceBasedProxyManagerBuilder<K> builderFor(RedisAdvancedClusterAsyncCommands<K, byte[]> redisAsyncCommands) {
         Objects.requireNonNull(redisAsyncCommands);
-        RedisApi redisApi = new RedisApi() {
+        RedisApi<K> redisApi = new RedisApi<>() {
             @Override
-            public <V> RedisFuture<V> eval(String script, ScriptOutputType scriptOutputType, byte[][] keys, byte[][] params) {
+            public <V> RedisFuture<V> eval(String script, ScriptOutputType scriptOutputType, K[] keys, byte[][] params) {
                 return redisAsyncCommands.eval(script, scriptOutputType, keys, params);
             }
             @Override
-            public RedisFuture<byte[]> get(byte[] key) {
+            public RedisFuture<byte[]> get(K key) {
                 return redisAsyncCommands.get(key);
             }
             @Override
-            public RedisFuture<Void> delete(byte[] key) {
+            public RedisFuture<Void> delete(K key) {
                 return (RedisFuture) redisAsyncCommands.del(key);
             }
         };
-        return new LettuceBasedProxyManagerBuilder(redisApi);
+        return new LettuceBasedProxyManagerBuilder<>(redisApi);
     }
 
-    public static class LettuceBasedProxyManagerBuilder extends AbstractRedisProxyManagerBuilder<LettuceBasedProxyManagerBuilder> {
+    public static class LettuceBasedProxyManagerBuilder<K> extends AbstractRedisProxyManagerBuilder<LettuceBasedProxyManagerBuilder<K>> {
 
-        private final RedisApi redisApi;
+        private final RedisApi<K> redisApi;
 
-        private LettuceBasedProxyManagerBuilder(RedisApi redisApi) {
+        private LettuceBasedProxyManagerBuilder(RedisApi<K> redisApi) {
             this.redisApi = Objects.requireNonNull(redisApi);
         }
 
-        public LettuceBasedProxyManager build() {
-            return new LettuceBasedProxyManager(this);
+        public LettuceBasedProxyManager<K> build() {
+            return new LettuceBasedProxyManager<>(this);
         }
 
     }
 
-    private LettuceBasedProxyManager(LettuceBasedProxyManagerBuilder builder) {
+    private LettuceBasedProxyManager(LettuceBasedProxyManagerBuilder<K> builder) {
         super(builder.getClientSideConfig());
         this.expirationStrategy = builder.getNotNullExpirationStrategy();
         this.redisApi = builder.redisApi;
     }
 
     @Override
-    protected CompareAndSwapOperation beginCompareAndSwapOperation(byte[] key) {
-        byte[][] keys = {key};
+    protected CompareAndSwapOperation beginCompareAndSwapOperation(K key) {
+        @SuppressWarnings("unchecked")
+        K[] keys = (K[]) new Object[]{key};
         return new CompareAndSwapOperation() {
             @Override
             public Optional<byte[]> getStateData() {
@@ -136,14 +146,15 @@ public class LettuceBasedProxyManager extends AbstractCompareAndSwapBasedProxyMa
 
             @Override
             public boolean compareAndSwap(byte[] originalData, byte[] newData, RemoteBucketState newState) {
-                return getFutureValue(compareAndSwapFuture(key, keys, originalData, newData, newState));
+                return getFutureValue(compareAndSwapFuture(keys, originalData, newData, newState));
             }
         };
     }
 
     @Override
-    protected AsyncCompareAndSwapOperation beginAsyncCompareAndSwapOperation(byte[] key) {
-        byte[][] keys = {key};
+    protected AsyncCompareAndSwapOperation beginAsyncCompareAndSwapOperation(K key) {
+        @SuppressWarnings("unchecked")
+        K[] keys = (K[]) new Object[]{key};
         return new AsyncCompareAndSwapOperation() {
             @Override
             public CompletableFuture<Optional<byte[]>> getStateData() {
@@ -154,19 +165,19 @@ public class LettuceBasedProxyManager extends AbstractCompareAndSwapBasedProxyMa
 
             @Override
             public CompletableFuture<Boolean> compareAndSwap(byte[] originalData, byte[] newData, RemoteBucketState newState) {
-                return convertToCompletableFuture(compareAndSwapFuture(key, keys, originalData, newData, newState));
+                return convertToCompletableFuture(compareAndSwapFuture(keys, originalData, newData, newState));
             }
         };
     }
 
     @Override
-    public void removeProxy(byte[] key) {
+    public void removeProxy(K key) {
         RedisFuture<?> future = redisApi.delete(key);
         getFutureValue(future);
     }
 
     @Override
-    protected CompletableFuture<Void> removeAsync(byte[] key) {
+    protected CompletableFuture<Void> removeAsync(K key) {
         RedisFuture<?> future = redisApi.delete(key);
         return convertToCompletableFuture(future).thenApply(bytes -> null);
     }
@@ -176,7 +187,7 @@ public class LettuceBasedProxyManager extends AbstractCompareAndSwapBasedProxyMa
         return true;
     }
 
-    private RedisFuture<Boolean> compareAndSwapFuture(byte[] key, byte[][] keys, byte[] originalData, byte[] newData, RemoteBucketState newState) {
+    private RedisFuture<Boolean> compareAndSwapFuture(K[] keys, byte[] originalData, byte[] newData, RemoteBucketState newState) {
         long ttlMillis = calculateTtlMillis(newState);
         if (ttlMillis > 0) {
             if (originalData == null) {
@@ -199,9 +210,9 @@ public class LettuceBasedProxyManager extends AbstractCompareAndSwapBasedProxyMa
         }
     }
 
-    private <T> CompletableFuture<T> convertToCompletableFuture(RedisFuture<T> redissonFuture) {
+    private <T> CompletableFuture<T> convertToCompletableFuture(RedisFuture<T> redisFuture) {
         CompletableFuture<T> jdkFuture = new CompletableFuture<>();
-        redissonFuture.whenComplete((result, error) -> {
+        redisFuture.whenComplete((result, error) -> {
             if (error != null) {
                 jdkFuture.completeExceptionally(error);
             } else {
@@ -234,13 +245,13 @@ public class LettuceBasedProxyManager extends AbstractCompareAndSwapBasedProxyMa
         return expirationStrategy.calculateTimeToLiveMillis(state, currentTimeNanos);
     }
 
-    private interface RedisApi {
+    private interface RedisApi<K> {
 
-        <V> RedisFuture<V> eval(String script, ScriptOutputType scriptOutputType, byte[][] keys, byte[][] params);
+        <V> RedisFuture<V> eval(String script, ScriptOutputType scriptOutputType, K[] keys, byte[][] params);
 
-        RedisFuture<byte[]> get(byte[] key);
+        RedisFuture<byte[]> get(K key);
 
-        RedisFuture<Void> delete(byte[] key);
+        RedisFuture<Void> delete(K key);
 
     }
 
