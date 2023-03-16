@@ -27,6 +27,7 @@ import io.github.bucket4j.distributed.proxy.optimization.Optimization;
 import io.github.bucket4j.distributed.proxy.optimization.Optimizations;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -101,7 +102,6 @@ public interface RemoteAsyncBucketBuilder<K> {
      * is costly, for example because parameters for particular {@code key} are stored in external database,
      * {@code configurationSupplier} will be called if and only if bucket has not been persisted before.
      *
-     *
      * @param key the key that used in external storage to distinguish one bucket from another.
      * @param configurationSupplier provider for bucket configuration
      *
@@ -109,4 +109,32 @@ public interface RemoteAsyncBucketBuilder<K> {
      */
     AsyncBucketProxy build(K key, Supplier<CompletableFuture<BucketConfiguration>> configurationSupplier);
 
+    default <K2> RemoteAsyncBucketBuilder<K2> withMapper(Function<? super K2, ? extends K> mapper) {
+        return new RemoteAsyncBucketBuilder<>() {
+            @Override
+            public RemoteAsyncBucketBuilder<K2> withRecoveryStrategy(RecoveryStrategy recoveryStrategy) {
+                return RemoteAsyncBucketBuilder.this.withRecoveryStrategy(recoveryStrategy).withMapper(mapper);
+            }
+
+            @Override
+            public RemoteAsyncBucketBuilder<K2> withOptimization(Optimization optimization) {
+                return RemoteAsyncBucketBuilder.this.withOptimization(optimization).withMapper(mapper);
+            }
+
+            @Override
+            public RemoteAsyncBucketBuilder<K2> withImplicitConfigurationReplacement(long desiredConfigurationVersion, TokensInheritanceStrategy tokensInheritanceStrategy) {
+                return RemoteAsyncBucketBuilder.this.withImplicitConfigurationReplacement(desiredConfigurationVersion, tokensInheritanceStrategy).withMapper(mapper);
+            }
+
+            @Override
+            public AsyncBucketProxy build(K2 key, BucketConfiguration configuration) {
+                return RemoteAsyncBucketBuilder.this.build(mapper.apply(key), configuration);
+            }
+
+            @Override
+            public AsyncBucketProxy build(K2 key, Supplier<CompletableFuture<BucketConfiguration>> configurationSupplier) {
+                return RemoteAsyncBucketBuilder.this.build(mapper.apply(key), configurationSupplier);
+            }
+        };
+    }
 }

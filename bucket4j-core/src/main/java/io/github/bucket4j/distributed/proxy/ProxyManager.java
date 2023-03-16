@@ -24,6 +24,7 @@ import io.github.bucket4j.distributed.AsyncBucketProxy;
 import io.github.bucket4j.distributed.BucketProxy;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Represents an extension point of bucket4j library.
@@ -73,4 +74,38 @@ public interface ProxyManager<K> {
      */
     AsyncProxyManager<K> asAsync() throws UnsupportedOperationException;
 
+    default <K1> ProxyManager<K1> withMapper(Function<? super K1, ? extends K> mapper) {
+        return new ProxyManager<>() {
+            @Override
+            public RemoteBucketBuilder<K1> builder() {
+                return ProxyManager.this.builder().withMapper(mapper);
+            }
+
+            @Override
+            public Optional<BucketConfiguration> getProxyConfiguration(K1 key) {
+                return ProxyManager.this.getProxyConfiguration(mapper.apply(key));
+            }
+
+            @Override
+            public void removeProxy(K1 key) {
+                ProxyManager.this.removeProxy(mapper.apply(key));
+            }
+
+            @Override
+            public boolean isAsyncModeSupported() {
+                return ProxyManager.this.isAsyncModeSupported();
+            }
+
+            @Override
+            public AsyncProxyManager<K1> asAsync() throws UnsupportedOperationException {
+                return ProxyManager.this.asAsync().withMapper(mapper);
+            }
+
+            // To prevent nesting of anonymous class instances, directly map the main ProxyManager
+            @Override
+            public <K2> ProxyManager<K2> withMapper(Function<? super K2, ? extends K1> innerMapper) {
+                return ProxyManager.this.withMapper(mapper.compose(innerMapper));
+            }
+        };
+    }
 }

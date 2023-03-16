@@ -26,6 +26,7 @@ import io.github.bucket4j.distributed.BucketProxy;
 import io.github.bucket4j.distributed.proxy.optimization.Optimization;
 
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -107,10 +108,36 @@ public interface RemoteBucketBuilder<K> {
      * @param key the key that used in external storage to distinguish one bucket from another.
      * @param configuration limits configuration
      *
-     *
-     *
      * @return new instance of {@link BucketProxy} created in lazy mode.
      */
     BucketProxy build(K key, BucketConfiguration configuration);
 
+    default <K2> RemoteBucketBuilder<K2> withMapper(Function<? super K2, ? extends K> mapper) {
+        return new RemoteBucketBuilder<>() {
+            @Override
+            public RemoteBucketBuilder<K2> withRecoveryStrategy(RecoveryStrategy recoveryStrategy) {
+                return RemoteBucketBuilder.this.withRecoveryStrategy(recoveryStrategy).withMapper(mapper);
+            }
+
+            @Override
+            public RemoteBucketBuilder<K2> withOptimization(Optimization optimization) {
+                return RemoteBucketBuilder.this.withOptimization(optimization).withMapper(mapper);
+            }
+
+            @Override
+            public RemoteBucketBuilder<K2> withImplicitConfigurationReplacement(long desiredConfigurationVersion, TokensInheritanceStrategy tokensInheritanceStrategy) {
+                return RemoteBucketBuilder.this.withImplicitConfigurationReplacement(desiredConfigurationVersion, tokensInheritanceStrategy).withMapper(mapper);
+            }
+
+            @Override
+            public BucketProxy build(K2 key, Supplier<BucketConfiguration> configurationSupplier) {
+                return RemoteBucketBuilder.this.build(mapper.apply(key), configurationSupplier);
+            }
+
+            @Override
+            public BucketProxy build(K2 key, BucketConfiguration configuration) {
+                return RemoteBucketBuilder.this.build(mapper.apply(key), configuration);
+            }
+        };
+    }
 }

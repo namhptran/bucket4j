@@ -24,6 +24,7 @@ import io.github.bucket4j.distributed.AsyncBucketProxy;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 /**
  * The asynchronous equivalent of {@link ProxyManager}.
@@ -58,5 +59,29 @@ public interface AsyncProxyManager<K> {
      * @return The future that completed by optional surround the configuration or empty optional if bucket with specified key is not stored.
      */
     CompletableFuture<Optional<BucketConfiguration>> getProxyConfiguration(K key);
+
+    default <K1> AsyncProxyManager<K1> withMapper(Function<? super K1, ? extends K> mapper) {
+        return new AsyncProxyManager<>() {
+            @Override
+            public RemoteAsyncBucketBuilder<K1> builder() {
+                return AsyncProxyManager.this.builder().withMapper(mapper);
+            }
+
+            @Override
+            public CompletableFuture<Void> removeProxy(K1 key) {
+                return AsyncProxyManager.this.removeProxy(mapper.apply(key));
+            }
+
+            @Override
+            public CompletableFuture<Optional<BucketConfiguration>> getProxyConfiguration(K1 key) {
+                return AsyncProxyManager.this.getProxyConfiguration(mapper.apply(key));
+            }
+
+            @Override
+            public <K2> AsyncProxyManager<K2> withMapper(Function<? super K2, ? extends K1> innerMapper) {
+                return AsyncProxyManager.this.withMapper(mapper.compose(innerMapper));
+            }
+        };
+    }
 
 }
