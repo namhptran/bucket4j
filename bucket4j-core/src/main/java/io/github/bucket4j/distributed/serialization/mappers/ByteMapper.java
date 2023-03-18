@@ -57,10 +57,10 @@ public interface ByteMapper<K> extends Function<K, byte[]> {
      * Mapper that serializes Longs using 8 bytes
      */
     ByteMapper<Long> LONG = value -> {
-        byte[] result = new byte[8];
-        for (int i = 7; i >= 0; i--) {
+        byte[] result = new byte[Long.BYTES];
+        for (int i = Long.BYTES - 1; i >= 0; i--) {
             result[i] = (byte)(value & 0xFF);
-            value >>= 8;
+            value >>= Byte.SIZE;
         }
         return result;
     };
@@ -69,10 +69,10 @@ public interface ByteMapper<K> extends Function<K, byte[]> {
      * Mapper that serializes Integers using 4 bytes
      */
     ByteMapper<Integer> INT = value -> {
-        byte[] result = new byte[4];
-        for (int i = 3; i >= 0; i--) {
+        byte[] result = new byte[Integer.BYTES];
+        for (int i = Integer.BYTES - 1; i >= 0; i--) {
             result[i] = (byte)(value & 0xFF);
-            value >>= 8;
+            value >>= Byte.SIZE;
         }
         return result;
     };
