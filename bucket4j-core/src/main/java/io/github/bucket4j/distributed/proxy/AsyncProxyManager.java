@@ -22,6 +22,7 @@ package io.github.bucket4j.distributed.proxy;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.distributed.AsyncBucketProxy;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -70,6 +71,7 @@ public interface AsyncProxyManager<K> {
      * @param <K1> the type of key accepted by returned AsyncProxyManager
      */
     default <K1> AsyncProxyManager<K1> withMapper(Function<? super K1, ? extends K> mapper) {
+        Objects.requireNonNull(mapper);
         return new AsyncProxyManager<>() {
             @Override
             public RemoteAsyncBucketBuilder<K1> builder() {

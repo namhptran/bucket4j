@@ -22,6 +22,7 @@ package io.github.bucket4j.distributed.proxy;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.distributed.BucketProxy;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -83,6 +84,7 @@ public interface ProxyManager<K> {
      * @param <K1> the type of key accepted by returned ProxyManager
      */
     default <K1> ProxyManager<K1> withMapper(Function<? super K1, ? extends K> mapper) {
+        Objects.requireNonNull(mapper);
         return new ProxyManager<>() {
             @Override
             public RemoteBucketBuilder<K1> builder() {

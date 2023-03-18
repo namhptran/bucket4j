@@ -26,6 +26,7 @@ import io.github.bucket4j.distributed.AsyncBucketProxy;
 import io.github.bucket4j.distributed.proxy.optimization.Optimization;
 import io.github.bucket4j.distributed.proxy.optimization.Optimizations;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -120,6 +121,7 @@ public interface RemoteAsyncBucketBuilder<K> {
      * @param <K1> the type of key accepted by returned RemoteAsyncBucketBuilder
      */
     default <K1> RemoteAsyncBucketBuilder<K1> withMapper(Function<? super K1, ? extends K> mapper) {
+        Objects.requireNonNull(mapper);
         return new RemoteAsyncBucketBuilder<>() {
             @Override
             public RemoteAsyncBucketBuilder<K1> withRecoveryStrategy(RecoveryStrategy recoveryStrategy) {

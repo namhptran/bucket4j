@@ -26,6 +26,7 @@ import io.github.bucket4j.distributed.BucketProxy;
 import io.github.bucket4j.distributed.proxy.optimization.Optimization;
 
 
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -122,6 +123,7 @@ public interface RemoteBucketBuilder<K> {
      * @param <K1> the type of key accepted by returned RemoteBucketBuilder
      */
     default <K1> RemoteBucketBuilder<K1> withMapper(Function<? super K1, ? extends K> mapper) {
+        Objects.requireNonNull(mapper);
         return new RemoteBucketBuilder<>() {
             @Override
             public RemoteBucketBuilder<K1> withRecoveryStrategy(RecoveryStrategy recoveryStrategy) {
