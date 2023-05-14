@@ -138,7 +138,7 @@ public class LettuceBasedReactiveProxyManager<K> extends AbstractCompareAndSwapB
             if (originalData == null) {
                 // nulls are prohibited as values, so "replace" must not be used in such cases
                 byte[][] params = {newData};
-                return redisApi.<Boolean>eval(LuaScripts.SCRIPT_SET_NX, ScriptOutputType.BOOLEAN, keys, params).log().next();
+                return redisApi.<Boolean>eval(LuaScripts.SCRIPT_SET_NX, ScriptOutputType.BOOLEAN, keys, params).next();
             } else {
                 byte[][] params = {originalData, newData};
                 return redisApi.<Boolean>eval(LuaScripts.SCRIPT_COMPARE_AND_SWAP, ScriptOutputType.BOOLEAN, keys, params).next();
@@ -146,8 +146,8 @@ public class LettuceBasedReactiveProxyManager<K> extends AbstractCompareAndSwapB
         }
     }
 
-    private byte[] encodeLong(Long value) {
-        return ("" + value).getBytes(StandardCharsets.UTF_8);
+    private byte[] encodeLong(long value) {
+        return String.valueOf(value).getBytes(StandardCharsets.UTF_8);
     }
 
     private long calculateTtlMillis(RemoteBucketState state) {

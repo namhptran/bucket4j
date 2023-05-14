@@ -18,6 +18,7 @@ import java.util.function.Supplier;
 
 import static io.github.bucket4j.distributed.proxy.RecoveryStrategy.THROW_BUCKET_NOT_FOUND_EXCEPTION;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public abstract class AbstractDistributedBucketTest<K> {
 
@@ -231,9 +232,7 @@ public abstract class AbstractDistributedBucketTest<K> {
 
     @Test
     public void testTryConsumeAsync() throws Exception {
-        if (!proxyManager.isAsyncModeSupported()) {
-            return;
-        }
+        assumeTrue(proxyManager.isAsyncModeSupported());
 
         Function<AsyncBucketProxy, Long> action = bucket -> {
             try {
@@ -252,9 +251,7 @@ public abstract class AbstractDistributedBucketTest<K> {
 
     @Test
     public void testTryConsumeAsyncWithLimit() throws Exception {
-        if (!proxyManager.isAsyncModeSupported()) {
-            return;
-        }
+        assumeTrue(proxyManager.isAsyncModeSupported());
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         Function<AsyncBucketProxy, Long> action = bucket -> {
@@ -347,9 +344,7 @@ public abstract class AbstractDistributedBucketTest<K> {
 
     @Test
     public void testWithMapperAsync() throws Exception {
-        if (!proxyManager.isAsyncModeSupported()) {
-            return;
-        }
+        assumeTrue(proxyManager.isAsyncModeSupported());
 
         BucketConfiguration configuration = BucketConfiguration.builder()
                 .addLimit(Bandwidth.simple(10, Duration.ofDays(1)))

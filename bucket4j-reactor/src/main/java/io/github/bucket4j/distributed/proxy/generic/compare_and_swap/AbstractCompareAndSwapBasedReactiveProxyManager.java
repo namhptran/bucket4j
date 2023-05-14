@@ -26,7 +26,7 @@ public abstract class AbstractCompareAndSwapBasedReactiveProxyManager<K> extends
 
 
     private <T> Mono<CommandResult<T>> executeReactive(Request<T> request, ReactiveCompareAndSwapOperation operation) {
-        return operation.getStateData()
+        return Mono.from(operation.getStateData())
                 .defaultIfEmpty(NO_DATA)
                 .flatMap(originalStateBytes -> {
                     originalStateBytes = originalStateBytes == NO_DATA ? null : originalStateBytes;
@@ -38,7 +38,7 @@ public abstract class AbstractCompareAndSwapBasedReactiveProxyManager<K> extends
                     }
 
                     byte[] newStateBytes = entry.getModifiedStateBytes();
-                    return operation.compareAndSwap(originalStateBytes, newStateBytes, entry.getModifiedState())
+                    return Mono.from(operation.compareAndSwap(originalStateBytes, newStateBytes, entry.getModifiedState()))
                             .flatMap(casWasSuccessful -> casWasSuccessful
                                     ? Mono.just(result)
                                     : executeReactive(request, operation)); // Retry

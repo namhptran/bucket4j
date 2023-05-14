@@ -40,6 +40,7 @@
         <module>bucket4j-reactor</module>
         <module>bucket4j-reactor-caffeine</module>
         <module>bucket4j-reactor-redis</module>
+        <module>bucket4j-reactor-postgresql</module>
     </modules>
 
     <properties>

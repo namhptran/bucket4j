@@ -30,7 +30,7 @@ public abstract class AbstractReactiveProxyManager<K> implements ReactiveProxyMa
 
     @Override
     public ProxyManager<K> asProxyManager() {
-        return new AbstractProxyManager<K>(clientSideConfig) {
+        return new AbstractProxyManager<>(clientSideConfig) {
             @Override
             protected <T> CommandResult<T> execute(K key, Request<T> request) {
                 return executeReactive(key, request).block();
