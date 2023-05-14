@@ -22,12 +22,12 @@ package io.github.bucket4j.distributed;
 import io.github.bucket4j.*;
 import reactor.core.publisher.Mono;
 
-/**
- * Reactive analog of {@link BucketProxy}.
- */
+@Experimental
 public interface ReactiveBucketProxy {
 
     ReactiveBucket asReactive();
+
+    SchedulingBucket asScheduler();
 
     ReactiveVerboseBucket asVerbose();
 

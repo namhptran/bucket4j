@@ -6,6 +6,7 @@ import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 
+@Experimental
 public interface ReactiveBucket {
 
     default Mono<Boolean> tryConsume(long numTokens, long maxWaitNanos) {

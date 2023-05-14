@@ -38,6 +38,8 @@
 <!--        <module>backward-compatibility-tests</module>-->
         <module>asciidoc</module>
         <module>bucket4j-reactor</module>
+        <module>bucket4j-reactor-caffeine</module>
+        <module>bucket4j-reactor-redis</module>
     </modules>
 
     <properties>

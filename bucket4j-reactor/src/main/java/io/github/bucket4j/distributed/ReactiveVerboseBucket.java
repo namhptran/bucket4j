@@ -3,6 +3,7 @@ package io.github.bucket4j.distributed;
 import io.github.bucket4j.*;
 import reactor.core.publisher.Mono;
 
+@Experimental
 public interface ReactiveVerboseBucket {
 
     Mono<VerboseResult<Boolean>> tryConsume(long numTokens);
