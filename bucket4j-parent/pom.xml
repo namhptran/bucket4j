@@ -63,6 +63,7 @@
         <caffeine.version>2.9.3</caffeine.version>
 
         <reactor.version>3.5.6</reactor.version>
+        <r2dbc.version>1.0.0.RELEASE</r2dbc.version>
     </properties>
 
     <scm>
