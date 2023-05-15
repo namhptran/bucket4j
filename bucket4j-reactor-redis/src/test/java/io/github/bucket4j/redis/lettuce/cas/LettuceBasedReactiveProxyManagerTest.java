@@ -4,8 +4,6 @@ import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
 import io.github.bucket4j.distributed.proxy.ReactiveProxyManager;
 import io.github.bucket4j.tck.AbstractDistributedReactiveBucketTest;
 import io.lettuce.core.RedisClient;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -18,19 +16,6 @@ class LettuceBasedReactiveProxyManagerTest extends AbstractDistributedReactiveBu
 
     @Container
     private static final GenericContainer container = new GenericContainer("redis:7.0.2").withExposedPorts(6379);
-    private static RedisClient redisClient;
-
-    @BeforeAll
-    static void setup() {
-        redisClient = createLettuceClient(container);
-    }
-
-    @AfterAll
-    static void shutdown() {
-        if (redisClient != null) {
-            redisClient.shutdown();
-        }
-    }
 
     private static RedisClient createLettuceClient(GenericContainer container) {
         String redisHost = container.getHost();
@@ -42,7 +27,7 @@ class LettuceBasedReactiveProxyManagerTest extends AbstractDistributedReactiveBu
 
     @Override
     protected ReactiveProxyManager<byte[]> getReactiveProxyManager() {
-        return LettuceBasedReactiveProxyManager.builderFor(redisClient)
+        return LettuceBasedReactiveProxyManager.builderFor(createLettuceClient(container))
                 .withExpirationStrategy(ExpirationAfterWriteStrategy.none())
                 .build();
     }

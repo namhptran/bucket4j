@@ -20,15 +20,15 @@ public abstract class AbstractLockBasedReactiveProxyManager<K, R> extends Abstra
     @Override
     public <T> Mono<CommandResult<T>> executeReactive(K key, Request<T> request) {
         ReactiveLockBasedTransaction<R> transaction = allocateTransaction(key);
-        return execute(request, transaction);
+        return executeReactive(request, transaction);
     }
 
     protected abstract ReactiveLockBasedTransaction<R> allocateTransaction(K key);
 
-    private <T> Mono<CommandResult<T>> execute(Request<T> request, ReactiveLockBasedTransaction<R> transaction) {
+    private <T> Mono<CommandResult<T>> executeReactive(Request<T> request, ReactiveLockBasedTransaction<R> transaction) {
         return Mono.usingWhen(
                 transaction.begin(),
-                resource -> execute(resource, request, transaction),
+                resource -> executeReactive(resource, request, transaction),
                 resource -> Mono.from(transaction.commit(resource))
                         .thenMany(transaction.unlock(resource))
                         .thenMany(transaction.release(resource)),
@@ -41,7 +41,7 @@ public abstract class AbstractLockBasedReactiveProxyManager<K, R> extends Abstra
         );
     }
 
-    private <T> Mono<CommandResult<T>> execute(R resource, Request<T> request, ReactiveLockBasedTransaction<R> transaction) {
+    private <T> Mono<CommandResult<T>> executeReactive(R resource, Request<T> request, ReactiveLockBasedTransaction<R> transaction) {
         RemoteCommand<T> command = request.getCommand();
 
         return Mono.from(transaction.lockAndGet(resource))

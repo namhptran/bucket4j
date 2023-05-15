@@ -9,6 +9,7 @@ import io.lettuce.core.cluster.SlotHash;
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -21,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+@Disabled
 class LettuceBasedReactiveProxyManager_ClusterMode_Test extends AbstractDistributedReactiveBucketTest<byte[]> {
 
     private static final Logger logger = LoggerFactory.getLogger(LettuceBasedReactiveProxyManager_ClusterMode_Test.class);

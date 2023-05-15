@@ -376,9 +376,9 @@ public abstract class AbstractDistributedReactiveBucketTest<K> {
 
             ReactiveBucketProxy bucket = proxyManager.builder().build(key, Mono.just(configuration));
 
-            Mono<Boolean> mono1 = bucket.tryConsume(10).doOnSubscribe(__ -> System.out.println("consume 10"));
-            Mono<Boolean> mono2 = bucket.tryConsume(2).doOnSubscribe(__ -> System.out.println("consume 2"));
-            Mono<Void> removeMono = proxyManager.removeProxy(key).doOnSubscribe(__ -> System.out.println("delete"));
+            Mono<Boolean> mono1 = bucket.tryConsume(10);
+            Mono<Boolean> mono2 = bucket.tryConsume(2);
+            Mono<Void> removeMono = proxyManager.removeProxy(key);
 
             StepVerifier.create(mono2)
                     .expectSubscription()

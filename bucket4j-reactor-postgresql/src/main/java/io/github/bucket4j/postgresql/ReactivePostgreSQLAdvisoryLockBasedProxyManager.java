@@ -48,7 +48,7 @@ public class ReactivePostgreSQLAdvisoryLockBasedProxyManager<K> extends Abstract
                 return Mono.from(connection.createStatement(lockSQL).bind("$1", key).execute())
                         .flatMapMany(Result::getRowsUpdated)
                         .thenMany(connection.createStatement(selectSqlQuery).bind("$1", key).execute())
-                        .flatMap(result -> result.map((row, rowMetaData) -> row.get(configuration.getStateName(), byte[].class)));
+                        .flatMap(result -> result.map(row -> row.get(configuration.getStateName(), byte[].class)));
             }
 
             @Override
