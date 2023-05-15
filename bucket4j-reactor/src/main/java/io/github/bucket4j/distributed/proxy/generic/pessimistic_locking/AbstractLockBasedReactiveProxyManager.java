@@ -30,14 +30,14 @@ public abstract class AbstractLockBasedReactiveProxyManager<K, R> extends Abstra
                 transaction.begin(),
                 resource -> execute(resource, request, transaction),
                 resource -> Mono.from(transaction.commit(resource))
-                        .then(Mono.from(transaction.unlock(resource)))
-                        .then(Mono.from(transaction.release(resource))),
+                        .thenMany(transaction.unlock(resource))
+                        .thenMany(transaction.release(resource)),
                 (resource, throwable) -> Mono.from(transaction.rollback(resource))
-                        .then(Mono.from(transaction.unlock(resource)))
-                        .then(Mono.from(transaction.release(resource))),
+                        .thenMany(transaction.unlock(resource))
+                        .thenMany(transaction.release(resource)),
                 resource -> Mono.from(transaction.rollback(resource))
-                        .then(Mono.from(transaction.unlock(resource)))
-                        .then(Mono.from(transaction.release(resource)))
+                        .thenMany(transaction.unlock(resource))
+                        .thenMany(transaction.release(resource))
         );
     }
 
@@ -59,8 +59,10 @@ public abstract class AbstractLockBasedReactiveProxyManager<K, R> extends Abstra
                     if (entry.isModified()) {
                         byte[] bytes = entry.getModifiedStateBytes();
                         if (persistedDataOnBeginOfTransaction == null) {
+                            System.out.println("inserting empty data");
                             return Mono.from(transaction.create(resource, bytes, entry.getModifiedState())).thenReturn(result);
                         } else {
+                            System.out.println("updating data");
                             return Mono.from(transaction.update(resource, bytes, entry.getModifiedState())).thenReturn(result);
                         }
                     }

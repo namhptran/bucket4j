@@ -7,6 +7,7 @@ import io.github.bucket4j.distributed.proxy.BucketNotFoundException;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import io.github.bucket4j.util.AsyncConsumptionScenario;
 import io.github.bucket4j.util.ConsumptionScenario;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -22,9 +23,9 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public abstract class AbstractDistributedBucketTest<K> {
 
-    private final K key = generateRandomKey();
-    private final K anotherKey = generateRandomKey();
-    private final ProxyManager<K> proxyManager = getProxyManager();
+    private K key;
+    private K anotherKey;
+    private ProxyManager<K> proxyManager;
 
     private BucketConfiguration configurationForLongRunningTests = BucketConfiguration.builder()
             .addLimit(Bandwidth.simple(1_000, Duration.ofMinutes(1)).withInitialTokens(0))
@@ -35,6 +36,13 @@ public abstract class AbstractDistributedBucketTest<K> {
     protected abstract ProxyManager<K> getProxyManager();
 
     protected abstract K generateRandomKey();
+
+    @BeforeEach
+    void setup() {
+        key = generateRandomKey();
+        anotherKey = generateRandomKey();
+        proxyManager = getProxyManager();
+    }
 
     @Test
     public void testReconstructRecoveryStrategy() {

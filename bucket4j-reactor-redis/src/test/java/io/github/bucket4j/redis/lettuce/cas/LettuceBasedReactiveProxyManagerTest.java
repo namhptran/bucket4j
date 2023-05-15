@@ -4,31 +4,31 @@ import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
 import io.github.bucket4j.distributed.proxy.ReactiveProxyManager;
 import io.github.bucket4j.tck.AbstractDistributedReactiveBucketTest;
 import io.lettuce.core.RedisClient;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
-public class LettuceBasedReactiveProxyManagerTest extends AbstractDistributedReactiveBucketTest<byte[]> {
+@Testcontainers
+class LettuceBasedReactiveProxyManagerTest extends AbstractDistributedReactiveBucketTest<byte[]> {
 
-    private static GenericContainer container;
+    @Container
+    private static final GenericContainer container = new GenericContainer("redis:7.0.2").withExposedPorts(6379);
     private static RedisClient redisClient;
 
-    @BeforeClass
-    public static void setup() {
-        container = startRedisContainer();
+    @BeforeAll
+    static void setup() {
         redisClient = createLettuceClient(container);
     }
 
-    @AfterClass
-    public static void shutdown() {
+    @AfterAll
+    static void shutdown() {
         if (redisClient != null) {
             redisClient.shutdown();
-        }
-        if (container != null) {
-            container.close();
         }
     }
 
@@ -38,12 +38,6 @@ public class LettuceBasedReactiveProxyManagerTest extends AbstractDistributedRea
         String redisUrl = "redis://" + redisHost + ":" + redisPort;
 
         return RedisClient.create(redisUrl);
-    }
-
-    private static GenericContainer startRedisContainer() {
-        GenericContainer genericContainer = new GenericContainer("redis:7.0.2").withExposedPorts(6379);
-        genericContainer.start();
-        return genericContainer;
     }
 
     @Override

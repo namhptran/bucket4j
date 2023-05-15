@@ -7,8 +7,8 @@ import io.lettuce.core.RedisURI;
 import io.lettuce.core.cluster.RedisClusterClient;
 import io.lettuce.core.cluster.SlotHash;
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class LettuceBasedReactiveProxyManager_ClusterMode_Test extends AbstractDistributedReactiveBucketTest<byte[]> {
+class LettuceBasedReactiveProxyManager_ClusterMode_Test extends AbstractDistributedReactiveBucketTest<byte[]> {
 
     private static final Logger logger = LoggerFactory.getLogger(LettuceBasedReactiveProxyManager_ClusterMode_Test.class);
     private static final Integer[] CONTAINER_CLUSTER_PORTS = {7000, 7001, 7002, 7003, 7004, 7005};
@@ -29,14 +29,14 @@ public class LettuceBasedReactiveProxyManager_ClusterMode_Test extends AbstractD
     private static GenericContainer container;
     private static RedisClusterClient redisClient;
 
-    @BeforeClass
-    public static void setup() {
+    @BeforeAll
+    static void setup() {
         container = startRedisContainer();
         redisClient = createLettuceClient(container);
     }
 
-    @AfterClass
-    public static void shutdown() {
+    @AfterAll
+    static void shutdown() {
         if (redisClient != null) {
             redisClient.shutdown();
         }

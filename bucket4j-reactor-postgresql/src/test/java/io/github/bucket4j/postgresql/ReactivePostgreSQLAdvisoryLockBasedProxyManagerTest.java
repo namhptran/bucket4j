@@ -8,27 +8,27 @@ import io.github.bucket4j.tck.AbstractDistributedReactiveBucketTest;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Mono;
 
 import java.text.MessageFormat;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class ReactivePostgreSQLAdvisoryLockBasedProxyManagerTest extends AbstractDistributedReactiveBucketTest<Long> {
-    private static PostgreSQLContainer container;
-    private static ConnectionFactory connectionFactory;
-    private static ReactiveProxyManager<Long> proxyManager;
+@Testcontainers
+class ReactivePostgreSQLAdvisoryLockBasedProxyManagerTest extends AbstractDistributedReactiveBucketTest<Long> {
+    @Container
+    private final PostgreSQLContainer container = new PostgreSQLContainer();
+    private ConnectionFactory connectionFactory;
 
-    @BeforeClass
-    public static void initializeInstance() {
-        container = startPostgreSQLContainer();
-        connectionFactory = createR2dbcConnectionFactory(container);
+    @BeforeEach
+    void initializeInstance() {
         BucketTableSettings tableSettings = BucketTableSettings.getDefault();
         final String INIT_TABLE_SCRIPT = "CREATE TABLE IF NOT EXISTS {0}({1} BIGINT PRIMARY KEY, {2} BYTEA)";
 
-        Mono.from(connectionFactory.create())
+        Mono.from(createR2dbcConnectionFactory(container).create())
                 .flatMapMany(connection -> connection.createStatement(
                         MessageFormat.format(
                                 INIT_TABLE_SCRIPT,
@@ -37,17 +37,16 @@ public class ReactivePostgreSQLAdvisoryLockBasedProxyManagerTest extends Abstrac
                                 tableSettings.getStateName()
                         )).execute())
                 .blockLast();
-
-        ReactiveSQLProxyConfiguration configuration = ReactiveSQLProxyConfiguration.builder()
-                .withClientSideConfig(ClientSideConfig.getDefault())
-                .withTableSettings(tableSettings)
-                .build(connectionFactory);
-        proxyManager = new ReactivePostgreSQLAdvisoryLockBasedProxyManager<>(configuration);
     }
 
     @Override
     protected ReactiveProxyManager<Long> getReactiveProxyManager() {
-        return proxyManager;
+        BucketTableSettings tableSettings = BucketTableSettings.getDefault();
+        ReactiveSQLProxyConfiguration configuration = ReactiveSQLProxyConfiguration.builder()
+                .withClientSideConfig(ClientSideConfig.getDefault())
+                .withTableSettings(tableSettings)
+                .build(createR2dbcConnectionFactory(container));
+        return new ReactivePostgreSQLAdvisoryLockBasedProxyManager<>(configuration);
     }
 
     @Override
@@ -55,27 +54,18 @@ public class ReactivePostgreSQLAdvisoryLockBasedProxyManagerTest extends Abstrac
         return ThreadLocalRandom.current().nextLong(1_000_000_000);
     }
 
-    @AfterClass
-    public static void shutdown() {
-        if (container != null) {
-            container.stop();
+    private ConnectionFactory createR2dbcConnectionFactory(PostgreSQLContainer container) {
+        if (connectionFactory != null) {
+            return connectionFactory;
         }
-    }
 
-    private static ConnectionFactory createR2dbcConnectionFactory(PostgreSQLContainer container) {
-
-        return ConnectionFactories.get(ConnectionFactoryOptions.builder()
+        connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
                 .option(ConnectionFactoryOptions.DRIVER, "postgresql")
                 .option(ConnectionFactoryOptions.HOST, container.getHost())
                 .option(ConnectionFactoryOptions.PORT, container.getMappedPort(5432))
                 .option(ConnectionFactoryOptions.USER, container.getUsername())
                 .option(ConnectionFactoryOptions.PASSWORD, container.getPassword())
                 .build());
-    }
-
-    private static PostgreSQLContainer startPostgreSQLContainer() {
-        PostgreSQLContainer container = new PostgreSQLContainer();
-        container.start();
-        return container;
+        return connectionFactory;
     }
 }

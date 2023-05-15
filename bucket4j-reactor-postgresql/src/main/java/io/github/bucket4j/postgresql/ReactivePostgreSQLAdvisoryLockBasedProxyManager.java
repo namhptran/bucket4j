@@ -1,12 +1,12 @@
 package io.github.bucket4j.postgresql;
 
-import io.github.bucket4j.distributed.jdbc.SQLProxyConfiguration;
 import io.github.bucket4j.distributed.proxy.generic.pessimistic_locking.AbstractLockBasedReactiveProxyManager;
 import io.github.bucket4j.distributed.proxy.generic.pessimistic_locking.ReactiveLockBasedTransaction;
 import io.github.bucket4j.distributed.r2dbc.ReactiveSQLProxyConfiguration;
 import io.github.bucket4j.distributed.remote.RemoteBucketState;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
+import io.r2dbc.spi.Result;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
@@ -21,9 +21,6 @@ public class ReactivePostgreSQLAdvisoryLockBasedProxyManager<K> extends Abstract
     private final String insertSqlQuery;
     private final String selectSqlQuery;
 
-    /**
-     * @param configuration {@link SQLProxyConfiguration} configuration.
-     */
     public ReactivePostgreSQLAdvisoryLockBasedProxyManager(ReactiveSQLProxyConfiguration configuration) {
         super(configuration.getClientSideConfig());
         this.connectionFactory = Objects.requireNonNull(configuration.getConnectionFactory());
@@ -49,45 +46,46 @@ public class ReactivePostgreSQLAdvisoryLockBasedProxyManager<K> extends Abstract
                 String lockSQL = "SELECT pg_advisory_xact_lock($1)";
 
                 return Mono.from(connection.createStatement(lockSQL).bind("$1", key).execute())
+                        .flatMapMany(Result::getRowsUpdated)
                         .thenMany(connection.createStatement(selectSqlQuery).bind("$1", key).execute())
-                        .flatMap(result -> result.map((row, rowMetaData) -> row.get(configuration.getStateName(), byte[].class)))
-                        .next();
+                        .flatMap(result -> result.map((row, rowMetaData) -> row.get(configuration.getStateName(), byte[].class)));
             }
 
             @Override
-            public Publisher<Void> update(Connection connection, byte[] data, RemoteBucketState newState) {
+            public Publisher<?> update(Connection connection, byte[] data, RemoteBucketState newState) {
                 return Mono.from(connection.createStatement(updateSqlQuery)
                         .bind("$1", data)
                         .bind("$2", key)
-                        .execute()).then();
+                        .execute())
+                        .flatMapMany(Result::getRowsUpdated);
             }
 
             @Override
-            public Publisher<Void> release(Connection connection) {
+            public Publisher<?> release(Connection connection) {
                 return connection.close();
             }
 
             @Override
-            public Publisher<Void> create(Connection connection, byte[] data, RemoteBucketState newState) {
+            public Publisher<?> create(Connection connection, byte[] data, RemoteBucketState newState) {
                 return Mono.from(connection.createStatement(insertSqlQuery)
                         .bind("$1", key)
                         .bind("$2", data)
-                        .execute()).then();
+                        .execute())
+                        .flatMapMany(Result::getRowsUpdated);
             }
 
             @Override
-            public Publisher<Void> rollback(Connection connection) {
-
+            public Publisher<?> rollback(Connection connection) {
                 return connection.rollbackTransaction();
             }
 
             @Override
-            public Publisher<Void> commit(Connection connection) {
+            public Publisher<?> commit(Connection connection) {
                 return connection.commitTransaction();
             }
 
             @Override
-            public Publisher<Void> unlock(Connection connection) {
+            public Publisher<?> unlock(Connection connection) {
                 // advisory lock implicitly unlocked on commit/rollback
                 return Mono.empty();
             }
@@ -98,6 +96,7 @@ public class ReactivePostgreSQLAdvisoryLockBasedProxyManager<K> extends Abstract
     protected Mono<Void> removeReactive(K key) {
         return Mono.from(connectionFactory.create())
                 .flatMapMany(c -> c.createStatement(removeSqlQuery).bind("$1", key).execute())
+                .flatMap(Result::getRowsUpdated)
                 .then();
 
     }

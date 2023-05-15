@@ -38,8 +38,8 @@ public class LettuceBasedReactiveProxyManager<K> extends AbstractCompareAndSwapB
                 return redisReactiveCommands.get(key);
             }
             @Override
-            public Mono<Void> delete(K key) {
-                return redisReactiveCommands.del(key).then();
+            public Mono<?> delete(K key) {
+                return redisReactiveCommands.del(key);
             }
         };
         return new LettuceBasedReactiveProxyManagerBuilder<>(redisApi);
@@ -73,8 +73,8 @@ public class LettuceBasedReactiveProxyManager<K> extends AbstractCompareAndSwapB
                 return redisReactiveCommands.get(key);
             }
             @Override
-            public Mono<Void> delete(K key) {
-                return redisReactiveCommands.del(key).then();
+            public Mono<?> delete(K key) {
+                return redisReactiveCommands.del(key);
             }
         };
         return new LettuceBasedReactiveProxyManagerBuilder<>(redisApi);

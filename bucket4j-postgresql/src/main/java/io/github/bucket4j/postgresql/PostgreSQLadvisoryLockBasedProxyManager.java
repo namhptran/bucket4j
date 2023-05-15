@@ -65,7 +65,7 @@ public class PostgreSQLadvisoryLockBasedProxyManager<K> extends AbstractLockBase
      *
      * @param configuration {@link SQLProxyConfiguration} configuration.
      */
-    public <T extends Object> PostgreSQLadvisoryLockBasedProxyManager(SQLProxyConfiguration<K> configuration) {
+    public PostgreSQLadvisoryLockBasedProxyManager(SQLProxyConfiguration<K> configuration) {
         super(configuration.getClientSideConfig());
         this.dataSource = Objects.requireNonNull(configuration.getDataSource());
         this.configuration = configuration;
